@@ -1,4 +1,5 @@
 import sys
+import random
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QMessageBox, QHBoxLayout
 from PyQt5.QtCore import Qt
 
@@ -8,7 +9,7 @@ class TicTacToeApp(QWidget):
         self.setWindowTitle('Tic Tac Toe')
         self.setGeometry(100, 100, 400, 400)
 
-        self.current_player = 'X'
+        self.current_player = ''
         self.board = [['' for _ in range(3)] for _ in range(3)]
         self.buttons = [[None for _ in range(3)] for _ in range(3)]
 
@@ -16,6 +17,7 @@ class TicTacToeApp(QWidget):
         self.player2_name = ''
 
         self.wins = {'X': 0, 'O': 0}
+        self.matches = 0
 
         self.layout = QGridLayout()
         self.setLayout(self.layout)
@@ -36,13 +38,13 @@ class TicTacToeApp(QWidget):
 
         self.player1_label = QLabel('Player 1 Name:')
         self.player1_input = QLineEdit()
-        self.player1_input.setMaximumWidth(150)  
+        self.player1_input.setMaximumWidth(150)
         player1_layout.addWidget(self.player1_label)
         player1_layout.addWidget(self.player1_input)
 
         self.player2_label = QLabel('Player 2 Name:')
         self.player2_input = QLineEdit()
-        self.player2_input.setMaximumWidth(150)  
+        self.player2_input.setMaximumWidth(150)
         player2_layout.addWidget(self.player2_label)
         player2_layout.addWidget(self.player2_input)
 
@@ -96,7 +98,7 @@ class TicTacToeApp(QWidget):
     def update_scorecard(self):
         player1_wins = self.wins['X']
         player2_wins = self.wins['O']
-        self.scorecard_label.setText(f'{self.player1_name}: {player1_wins} | {self.player2_name}: {player2_wins}')
+        self.scorecard_label.setText(f'{self.player1_name}: {player1_wins} | {self.player2_name}: {player2_wins} | Matches Played: {self.matches}')
 
     def update_turn_display(self):
         if self.player1_name and self.player2_name:
@@ -122,31 +124,52 @@ class TicTacToeApp(QWidget):
             self.show_winner('Tie')
 
     def show_winner(self, winner):
-        winner_text = 'Tie' if winner == 'Tie' else f'{self.player1_name if winner == "X" else self.player2_name} wins!'
-        message_box = QMessageBox.information(self, 'Game Over', winner_text)
         if winner != 'Tie':
+            winner_text = f'{self.player1_name if winner == "X" else self.player2_name} wins this match!'
             self.wins[winner] += 1
+        else:
+            winner_text = 'This match is a Tie!'
+
+        self.matches += 1
         self.update_scorecard()
-        self.reset_board() 
+        
+        message_box = QMessageBox.information(self, 'Match Over', winner_text)
+
+        if self.matches >= 5:
+            self.check_round_winner()
+        else:
+            self.reset_board()
+
+    def check_round_winner(self):
+        if self.wins['X'] > self.wins['O']:
+            round_winner = f'{self.player1_name} wins the round!'
+        elif self.wins['O'] > self.wins['X']:
+            round_winner = f'{self.player2_name} wins the round!'
+        else:
+            round_winner = 'The round is a Tie!'
+
+        QMessageBox.information(self, 'Round Over', round_winner)
+        self.reset_game()
 
     def reset_game(self):
-        self.current_player = 'X'
+        self.wins = {'X': 0, 'O': 0}
+        self.matches = 0
         self.player1_name = self.player1_input.text()
         self.player2_name = self.player2_input.text()
-        self.scorecard_label.clear()  
-        self.wins = {'X': 0, 'O': 0}  
-        self.reset_board()  
-        self.player1_input.setReadOnly(False)  
-        self.player2_input.setReadOnly(False)
-        self.update_turn_display()
+        self.scorecard_label.clear()
+        self.randomize_turn()
+        self.reset_board()
 
     def reset_board(self):
-        self.current_player = 'X'
+        self.board = [['' for _ in range(3)] for _ in range(3)]
         for i in range(3):
             for j in range(3):
-                self.board[i][j] = ''
                 self.buttons[i][j].setText('')
+        self.randomize_turn()
         self.update_turn_display()
+
+    def randomize_turn(self):
+        self.current_player = random.choice(['X', 'O'])
 
     def save_names(self):
         self.player1_name = self.player1_input.text()
@@ -154,6 +177,7 @@ class TicTacToeApp(QWidget):
         self.update_scorecard()  
         self.player1_input.setReadOnly(True)  
         self.player2_input.setReadOnly(True)
+        self.randomize_turn()
         self.update_turn_display()
 
 if __name__ == '__main__':
